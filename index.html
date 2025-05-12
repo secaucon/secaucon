@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Télésurveillance</title>
+    <style>
+        :root {
+            --background-color: #f0f0f0;
+            --text-color: #333;
+            --button-background-color: #007bff;
+            --button-text-color: #fff;
+        }
+
+        .dark-mode {
+            --background-color: #333;
+            --text-color: #f0f0f0;
+            --button-background-color: #555;
+            --button-text-color: #fff;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--button-background-color);
+            color: var(--button-text-color);
+        }
+
+        #theme-toggle {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        #login-container, #main-container {
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            background-color: var(--button-background-color);
+            color: var(--button-text-color);
+            border: none;
+            border-radius: 5px;
+        }
+
+        #image-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        #image-container img {
+            margin: 10px;
+            max-width: 200px;
+            max-height: 200px;
+        }
+
+        #email-password-container, #create-account-container {
+            margin: 20px;
+        }
+
+        #email-password-container input, #create-account-container input {
+            display: block;
+            margin: 10px auto;
+            padding: 10px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Télésurveillance</h1>
+        <button id="theme-toggle">Mode Sombre</button>
+    </header>
+    <div id="login-container">
+        <button id="google-login-button">Se connecter avec Google</button>
+        <button id="apple-login-button">Se connecter avec Apple</button>
+        <div id="email-password-container">
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Mot de passe">
+            <button id="email-password-login-button">Se connecter avec Email/Mot de passe</button>
+        </div>
+        <div id="create-account-container">
+            <input type="email" id="new-email" placeholder="Nouvel Email">
+            <input type="password" id="new-password" placeholder="Nouveau Mot de passe">
+            <button id="create-account-button">Créer un compte</button>
+        </div>
+    </div>
+    <div id="main-container" style="display: none;">
+        <h1>Télésurveillance</h1>
+        <div id="image-container">
+            <!-- Les images seront affichées ici -->
+        </div>
+        <button id="settings-button">Paramètres</button>
+    </div>
+
+    <!-- Inclure les bibliothèques Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+
+    <script>
+        // Remplacez par votre configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyC6_g_W0US4PWd3QBVnZAtGgmHfrvyYoJY",
+            authDomain: "secaucon.firebaseapp.com",
+            projectId: "secaucon",
+            storageBucket: "secaucon.appspot.com",
+            messagingSenderId: "473403994559",
+            appId: "1:473403994559:web:be592ed81300c8934eb10a"
+        };
+
+        // Initialiser Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Connexion avec Google
+        document.getElementById('google-login-button').addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithPopup(provider)
+                .then((result) => {
+                    document.getElementById('login-container').style.display = 'none';
+                    document.getElementById('main-container').style.display = 'block';
+                    loadImages();
+                })
+                .catch((error) => {
+                    console.error("Erreur de connexion avec Google:", error);
+                });
+        });
+
+        // Connexion avec Apple
+        document.getElementById('apple-login-button').addEventListener('click', () => {
+            const provider = new firebase.auth.OAuthProvider('apple.com');
+            firebase.auth().signInWithPopup(provider)
+                .then((result) => {
+                    document.getElementById('login-container').style.display = 'none';
+                    document.getElementById('main-container').style.display = 'block';
+                    loadImages();
+                })
+                .catch((error) => {
+                    console.error("Erreur de connexion avec Apple:", error);
+                });
+        });
+
+        // Connexion avec Email/Mot de passe
+        document.getElementById('email-password-login-button').addEventListener('click', () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            firebase.auth().signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    document.getElementById('login-container').style.display = 'none';
+                    document.getElementById('main-container').style.display = 'block';
+                    loadImages();
+                })
+                .catch((error) => {
+                    console.error("Erreur de connexion avec Email/Mot de passe:", error);
+                });
+        });
+
+        // Création de compte avec Email/Mot de passe
+        document.getElementById('create-account-button').addEventListener('click', () => {
+            const email = document.getElementById('new-email').value;
+            const password = document.getElementById('new-password').value;
+            firebase.auth().createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    alert("Compte créé avec succès!");
+                })
+                .catch((error) => {
+                    console.error("Erreur de création de compte:", error);
+                });
+        });
+
+        // Charger les images depuis Firebase Storage
+        function loadImages() {
+            const storage = firebase.storage();
+            const storageRef = storage.ref();
+            const imageContainer = document.getElementById('image-container');
+
+            // Supposons que vous avez 10 images nommées "1", "2", ..., "10"
+            const numberOfImages = 10; // Changez ce nombre selon le nombre d'images que vous avez
+
+            for (let i = 1; i <= numberOfImages; i++) {
+                const imageRef = storageRef.child(`images_humain_detecte/${i}`);
+                imageRef.getDownloadURL().then((url) => {
+                    const img = document.createElement('img');
+                    img.src = url;
+                    imageContainer.appendChild(img);
+                }).catch((error) => {
+                    console.error(`Erreur lors de l'obtention de l'URL de téléchargement pour l'image ${i}:`, error);
+                });
+            }
+        }
+
+        // Bouton de paramètres
+        document.getElementById('settings-button').addEventListener('click', () => {
+            alert('Paramètres à configurer');
+        });
+
+        // Basculer entre les modes clair et sombre
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const button = document.getElementById('theme-toggle');
+            if (document.body.classList.contains('dark-mode')) {
+                button.textContent = 'Mode Clair';
+            } else {
+                button.textContent = 'Mode Sombre';
+            }
+        });
+    </script>
+</body>
+</html>
